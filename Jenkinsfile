@@ -11,6 +11,14 @@ pipeline {
                 sh "docker build . -t alef123vinicius/python-app:${DOCKER_TAG} "
             }
         }
+        stage('Push on Dockerhub'){
+            steps{
+                withCredentials([string(credentialsId: 'docker-hub', variable: 'dockerHubPwd')]){
+                    sh "docker login -u alef123vinicius -p ${dockerHubPwd}"
+                    sh "docker push alef123vinicius/python-app:${DOCKER_TAG}"
+                }
+            }
+        }
         stage('Test code'){
             steps {
                 // testing application before updateing in cluster
@@ -36,4 +44,8 @@ pipeline {
             }
         }
     }
+}
+def getDockerTag(){
+    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
+    return tag
 }

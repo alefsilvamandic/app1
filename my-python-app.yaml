@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-python-app-mem
+spec:
+  selector:
+    matchLabels:
+      run: my-python-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: my-python-app
+    spec:
+      containers:
+      - name: my-python-app
+        image: alef123vinicius/python-app:v1
+        ports:
+        - containerPort: 19000
+        resources:
+          limits:
+            memory: "2"
+          requests:
+            memory: "1"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-python-app-mem
+  labels:
+    run: my-python-app
+spec:
+  ports:
+  - port: 5002
+  selector:
+    run: my-python-app
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: my-python-app-mem
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: my-python-app-mem
+  maxReplicas: 5
+  minReplicas: 1
+  metrics: 
+  - type: Resource
+    resource:
+      name: memory 
+      target:
+        type: Utilization
+        averageUtilization: 70 

@@ -1,24 +1,52 @@
-node {
-    checkout scm
-    // Pega o commit id para ser usado de tag (versionamento) na imagem
-    sh "git rev-parse --short HEAD > commit-id"
-    tag = readFile('commit-id').replace("\n", "").replace("\r", "")
-    
-    // configura o nome da aplicação, o endereço do repositório e o nome da imagem com a versão
-    appName = "app"
-    registryHost = "127.0.0.1:30400/"
-    imageName = "${registryHost}${appName}:${tag}"
-    
-    // Configuramos os estágios
-    
-    stage "Build"
-        def customImage = docker.build("${imageName}")
-    stage "Push"
-        customImage.push() 
-    stage "Deploy PROD"
-        input "Deploy to PROD?"
-        customImage.push('latest')
-        sh "kubectl apply -f https://raw.githubusercontent.com/cirolini/Docker-Flask-uWSGI/master/k8s_app.yaml"
-        sh "kubectl set image deployment app app=${imageName} --record"
-        sh "kubectl rollout status deployment/app"
+pipeline {
+    agent any
+    environment{
+        DOCKER_TAG = getDockerTag()
+    }
+    stages {
+        stage('Build docker image') {
+            steps {
+                // builing application
+                echo "building...." 
+                sh "docker build . -t alef123vinicius/python-app:${DOCKER_TAG} "
+            }
+        }
+        stage('Push on Dockerhub'){
+            steps{
+                withCredentials([string(credentialsId: 'docker-hub', variable: 'dockerHubPwd')]){
+                    sh "docker login -u alef123vinicius -p ${dockerHubPwd}"
+                    sh "docker push alef123vinicius/python-app:${DOCKER_TAG}"
+                }
+            }
+        }
+        stage('Test code'){
+            steps {
+                // testing application before updateing in cluster
+                echo "Testing code" 
+            }
+        }
+        stage('Deploy QA'){
+            steps{
+                // oh yeah go execute and update application
+                echo "Deployment QA" 
+            }
+        }
+        stage('Test check'){
+            steps{
+                // oh yeah go execute and update application
+                echo "Test healthchecks" 
+            }
+        }
+        stage('Deploy Production'){
+            steps{
+                // oh yeah go execute and update application
+                echo "Deployment Production" 
+            }
+        }
+    }
+}
+
+def getDockerTag(){
+    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
+    return tag
 }

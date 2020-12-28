@@ -4,19 +4,11 @@ pipeline {
         DOCKER_TAG = getDockerTag()
     }
     stages {
-        stage('Build docker image') {
+        stage('deploy staging') {
             steps {
                 // builing application
-                echo "building...." 
-                sh "docker build . -t alef123vinicius/python-app:${DOCKER_TAG} "
-            }
-        }
-        stage('Push on Dockerhub'){
-            steps{
-                withCredentials([string(credentialsId: 'docker-hub', variable: 'dockerHubPwd')]){
-                    sh "docker login -u alef123vinicius -p ${dockerHubPwd}"
-                    sh "docker push alef123vinicius/python-app:${DOCKER_TAG}"
-                }
+                echo "deploy staging...." 
+                sh "kubectl apply -f my-python-app.yaml"
             }
         }
         stage('Test code'){
@@ -44,8 +36,4 @@ pipeline {
             }
         }
     }
-}
-def getDockerTag(){
-    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
-    return tag
 }

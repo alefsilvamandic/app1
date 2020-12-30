@@ -3,7 +3,7 @@ pipeline {
         dockerfile true
     }
     environment{
-        DOCKER_TAG = getDockerTag()
+        DOCKER_TAG = "v2"
     }
     stages {
         stage('Build docker image') {
@@ -46,9 +46,4 @@ pipeline {
             }
         }
     }
-}
-
-def getDockerTag(){
-    def tag  = sh script: 'git rev-parse HEAD', returnStdout: true
-    return tag
 }

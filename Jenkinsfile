@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        dockerfile true
-    }
+    agent any
     environment{
         DOCKER_TAG = "v2"
     }
@@ -10,15 +8,11 @@ pipeline {
             steps {
                 // builing application
                 echo "building...." 
-                sh "docker build . -t alef123vinicius/python-app:${DOCKER_TAG} "
             }
         }
         stage('Push on Dockerhub'){
             steps{
-                withCredentials([string(credentialsId: 'docker-hub', variable: 'dockerHubPwd')]){
-                    sh "docker login -u alef123vinicius -p ${dockerHubPwd}"
-                    sh "docker push alef123vinicius/python-app:${DOCKER_TAG}"
-                }
+                echo "pushing...." 
             }
         }
         stage('Test code'){
@@ -31,6 +25,7 @@ pipeline {
             steps{
                 // oh yeah go execute and update application
                 echo "Deployment QA" 
+                sh 'kubectl apply -f my-python-app.yaml --namespace qa'
             }
         }
         stage('Test check'){

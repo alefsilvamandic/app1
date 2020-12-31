@@ -25,7 +25,18 @@ pipeline {
             steps{
                 // oh yeah go execute and update application
                 echo "Deployment QA" 
-                sh 'kubectl apply -f my-python-app.yaml --namespace qa'
+                def namespace="qa"
+                def ENV="my-python-app"
+
+                withCredentials([file(credentialsId: ...)]) {
+                    // change context with related namespace
+                    sh "kubectl config set-context $(kubectl config current-context) --namespace=${namespace}"
+
+                    //Deploy with Helm
+                    echo "Deploying"
+                    sh "helm upgrade --install road-dashboard -f values.${ENV}.yaml --set tag=$TAG --namespace ${namespace}"  
+                    //sh 'kubectl apply -f my-python-app.yaml --namespace qa'
+                }
             }
         }
         stage('Test check'){
